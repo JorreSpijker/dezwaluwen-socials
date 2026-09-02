@@ -20,8 +20,9 @@ export const formatDayHeader = (date) => format(date, 'EEEE d MMMM', { locale: n
 export const formatTime = (date) => format(date, 'HH:mm')
 export const formatDayKey = (date) => format(date, 'yyyy-MM-dd')
 
+/** Accepteert zowel yyyy-MM-dd-strings als Date-objecten. */
 export function formatRange(from, to) {
-  const a = parseISO(from)
-  const b = parseISO(to)
+  const a = typeof from === 'string' ? parseISO(from) : from
+  const b = typeof to === 'string' ? parseISO(to) : to
   return `${format(a, 'd MMMM', { locale: nl })} t/m ${format(b, 'd MMMM yyyy', { locale: nl })}`
 }

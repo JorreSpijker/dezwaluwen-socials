@@ -91,16 +91,17 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <div className="mx-auto grid max-w-5xl gap-6 px-4 pt-6 pb-32 lg:grid-cols-[20rem_1fr] lg:gap-10 lg:px-8 lg:pb-10">
+      <div className="mx-auto grid max-w-6xl gap-6 px-4 pt-6 pb-32 lg:grid-cols-[20rem_1fr] lg:gap-10 lg:px-8 lg:pb-10">
         <div className="min-w-0 space-y-4 lg:col-start-1 lg:row-start-1">
           <h1 className="text-xl font-bold text-slate-900 sr-only">De Zwaluwen — socials</h1>
           <Tabs tab={tab} onChange={changeTab} />
         </div>
 
         <div className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+          {/* Op desktop zo groot als de vensterhoogte toelaat (story is 9:16). */}
           <div
             ref={frameRef}
-            className="mx-auto w-full max-w-[420px] overflow-hidden bg-white shadow-lg lg:mx-0 lg:w-[324px] lg:max-w-none"
+            className="mx-auto w-full max-w-[420px] overflow-hidden bg-white shadow-lg lg:mx-0 lg:w-[min(100%,calc((100vh-7rem)/1.7778))] lg:max-w-none"
             style={{ height: 1920 * scale }}
           >
             <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>

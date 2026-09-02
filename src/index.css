@@ -1,9 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --color-club: #0b2545;
-  --color-club-light: #13375f;
-  --color-accent: #f2c14e;
+  --font-archivo: "Archivo", sans-serif;
+  --font-barlow: "Barlow Semi Condensed", sans-serif;
+
+  --color-club: #005daa;
+  --color-clubdeep: #0b3d6b;
+  --color-clubtint: #1c7fcb;
+  --color-muted: #5e7c9c;
+  --color-surface: #f1f6fb;
+  --color-rule: #e1e9f2;
+  --color-win: #17924f;
+  --color-loss: #c0392b;
+  --color-draw: #7c8fa6;
 }
 
 body {
