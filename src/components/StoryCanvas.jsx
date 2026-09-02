@@ -14,7 +14,7 @@ function groupByDay(matches) {
   return groups
 }
 
-export default function StoryCanvas({ ref, kind, matches, dateFrom, dateTo }) {
+export default function StoryCanvas({ ref, club, kind, matches, dateFrom, dateTo }) {
   const groups = groupByDay(matches)
   const Row = kind === 'results' ? ResultRow : MatchRow
 
@@ -50,26 +50,37 @@ export default function StoryCanvas({ ref, kind, matches, dateFrom, dateTo }) {
     <div
       ref={ref}
       className="relative flex h-[1920px] w-[1080px] shrink-0 flex-col overflow-hidden bg-white font-archivo"
+      // Inline op deze node, want html-to-image kloont alleen deze subtree en
+      // neemt variabelen van hoger in de pagina niet mee.
+      style={{
+        '--color-club': club.colors.club,
+        '--color-clubdeep': club.colors.clubdeep,
+        '--color-clubtint': club.colors.clubtint,
+      }}
     >
       {/* Clubfoto als achtergrond: sterk vervaagd en onder een witte gradient,
           zodat er kleur doorschemert zonder de leesbaarheid te raken. */}
-      <div className="absolute inset-0 overflow-hidden">
-        <img
-          src="/bg.jpg"
-          alt=""
-          className="size-full scale-110 object-cover blur-[10px]"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/62 via-white/56 to-white"></div>
-      </div>
+      {club.background && (
+        <div className="absolute inset-0 overflow-hidden">
+          <img
+            src={club.background}
+            alt=""
+            className="size-full scale-110 object-cover blur-[10px]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/62 via-white/56 to-white"></div>
+        </div>
+      )}
 
       <div className="relative h-[18px] shrink-0 bg-club"></div>
       <div className="relative flex min-h-0 flex-1 flex-col px-16 pt-[36px] pb-14">
         <div className="flex items-center gap-[34px]">
-          <img
-            src="/logo.svg"
-            alt="KV De Zwaluwen"
-            className="h-auto w-[260px] shrink-0"
-          />
+          {club.logo && (
+            <img
+              src={club.logo}
+              alt={club.name}
+              className="h-auto w-[260px] shrink-0"
+            />
+          )}
           <div className="flex min-w-0 flex-col gap-2.5">
             <div className="text-[96px] leading-[0.9] font-black tracking-[-0.075em] text-club">
               {kind === 'results' ? 'UITSLAGEN' : 'PROGRAMMA'}
@@ -111,9 +122,9 @@ export default function StoryCanvas({ ref, kind, matches, dateFrom, dateTo }) {
         </div>
 
         <div className="mt-[34px] flex shrink-0 items-center justify-between border-t-2 border-rule pt-7">
-          <div className="text-[27px] font-bold text-clubdeep">KV de Zwaluwen</div>
+          <div className="text-[27px] font-bold text-clubdeep">{club.name}</div>
           <div className="font-barlow text-[27px] font-semibold tracking-[0.04em] text-club">
-            @kvdezwaluwen
+            {club.handle}
           </div>
         </div>
       </div>

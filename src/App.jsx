@@ -2,8 +2,19 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { fetchMatches, ownTeams } from './api/korfbal.js'
 import { today, nextWeek, oneWeekAgo, thisWeek } from './lib/dates.js'
 import { exportPng } from './lib/export.js'
+import { slug } from './lib/slug.js'
+import {
+  CLUBS,
+  CUSTOM_ID,
+  loadCustom,
+  loadSelectedId,
+  saveCustom,
+  saveSelectedId,
+} from './config/club.js'
 import Tabs from './components/Tabs.jsx'
 import Controls from './components/Controls.jsx'
+import ClubSelector from './components/ClubSelector.jsx'
+import ClubSettings from './components/ClubSettings.jsx'
 import StoryCanvas from './components/StoryCanvas.jsx'
 
 const defaultRange = (tab) =>
@@ -11,6 +22,8 @@ const defaultRange = (tab) =>
 
 export default function App() {
   const [tab, setTab] = useState('program')
+  const [clubId, setClubId] = useState(loadSelectedId)
+  const [custom, setCustom] = useState(loadCustom)
   const [[dateFrom, dateTo], setRange] = useState(() => defaultRange('program'))
   const [data, setData] = useState({ matches: [], raw: [] })
   const [hiddenTeams, setHiddenTeams] = useState(() => new Set())
@@ -31,12 +44,22 @@ export default function App() {
     return () => observer.disconnect()
   }, [])
 
+  const club = useMemo(
+    () =>
+      clubId === CUSTOM_ID ? custom : (CLUBS.find((c) => c.id === clubId) ?? CLUBS[0]),
+    [clubId, custom],
+  )
+
   useEffect(() => {
     if (!dateFrom || !dateTo) return
+    if (!club.clubCode) {
+      setData({ matches: [], raw: [] })
+      return
+    }
     let cancelled = false
     setLoading(true)
     setError(null)
-    fetchMatches(tab, dateFrom, dateTo)
+    fetchMatches(tab, dateFrom, dateTo, club.clubCode)
       .then((result) => {
         if (cancelled) return
         setData(result)
@@ -47,7 +70,7 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [tab, dateFrom, dateTo])
+  }, [tab, dateFrom, dateTo, club.clubCode])
 
   const teams = useMemo(() => ownTeams(data.matches), [data.matches])
 
@@ -69,6 +92,21 @@ export default function App() {
     setRange(defaultRange(next))
   }
 
+  function changeClub(next) {
+    setClubId(next)
+    saveSelectedId(next)
+    setError(null)
+  }
+
+  function changeCustom(next) {
+    setCustom(next)
+    try {
+      saveCustom(next)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   function toggleTeam(team) {
     setHiddenTeams((prev) => {
       const next = new Set(prev)
@@ -81,7 +119,7 @@ export default function App() {
     setExporting(true)
     try {
       const name = tab === 'results' ? 'uitslagen' : 'programma'
-      await exportPng(canvasRef.current, `zwaluwen-${name}-${dateFrom}.png`)
+      await exportPng(canvasRef.current, `${slug(club.name)}-${name}-${dateFrom}.png`)
     } catch (err) {
       setError(`Export mislukt: ${err.message}`)
     } finally {
@@ -92,12 +130,20 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100">
       <div className="mx-auto grid max-w-6xl gap-6 px-4 pt-6 pb-32 lg:grid-cols-[20rem_1fr] lg:gap-10 lg:px-8 lg:pb-10">
-        <div className="min-w-0 space-y-4 lg:col-start-1 lg:row-start-1">
-          <h1 className="text-xl font-bold text-slate-900 sr-only">De Zwaluwen — socials</h1>
+        <div className="order-1 min-w-0 space-y-4 lg:order-none lg:col-start-1 lg:row-start-1">
+          <h1 className="text-xl font-bold text-slate-900 sr-only">Korfbal socials</h1>
+          <ClubSelector clubId={clubId} onChange={changeClub} />
+          {/* Direct onder de selector: op mobiel staat de preview er anders
+              tussen en moet je een schermlengte scrollen na het kiezen. */}
+          {clubId === CUSTOM_ID && (
+            <ClubSettings config={custom} onChange={changeCustom} onError={setError} />
+          )}
           <Tabs tab={tab} onChange={changeTab} />
         </div>
 
-        <div className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+        {/* Op mobiel staat de preview onder de bediening (order-3), op desktop
+            bepaalt de expliciete grid-plaatsing de volgorde. */}
+        <div className="order-3 min-w-0 lg:order-none lg:col-start-2 lg:row-span-2 lg:row-start-1">
           {/* Op desktop zo groot als de vensterhoogte toelaat (story is 9:16). */}
           <div
             ref={frameRef}
@@ -107,6 +153,7 @@ export default function App() {
             <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
               <StoryCanvas
                 ref={canvasRef}
+                club={club}
                 kind={tab}
                 matches={visible}
                 dateFrom={dateFrom}
@@ -116,7 +163,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="min-w-0 space-y-5 lg:col-start-1 lg:row-start-2">
+        <div className="order-2 min-w-0 space-y-5 lg:order-none lg:col-start-1 lg:row-start-2">
           <Controls
             dateFrom={dateFrom}
             dateTo={dateTo}
@@ -128,12 +175,17 @@ export default function App() {
             onToggleTeam={toggleTeam}
           />
 
-          {loading && <p className="text-sm text-slate-500">Laden…</p>}
           {error && <p className="text-sm text-red-600">{error}</p>}
-          {!loading && !error && (
-            <p className="text-sm text-slate-500">
-              {visible.length} van {data.matches.length} wedstrijden zichtbaar
-            </p>
+          {!club.clubCode ? (
+            <p className="text-sm text-slate-500">Vul eerst een clubcode in.</p>
+          ) : loading ? (
+            <p className="text-sm text-slate-500">Laden…</p>
+          ) : (
+            !error && (
+              <p className="text-sm text-slate-500">
+                {visible.length} van {data.matches.length} wedstrijden zichtbaar
+              </p>
+            )
           )}
 
           {scoreless && (

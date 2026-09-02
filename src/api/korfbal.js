@@ -1,7 +1,5 @@
 const BASE = 'https://api-mijn.korfbal.nl/api/v2/clubs'
 
-export const CLUB_ID = 'NCX35M2'
-
 // De API-datum draagt de juiste offset (+0200). We lezen de wall-clock-waarde
 // rechtstreeks uit de string zodat de tijdzone van de browser de getoonde tijd
 // nooit verschuift.
@@ -37,7 +35,7 @@ function extractScore(match) {
   )
 }
 
-function normalize(match, index) {
+function normalize(match, index, clubCode) {
   const home = match.teams?.home ?? {}
   const away = match.teams?.away ?? {}
   return {
@@ -45,8 +43,8 @@ function normalize(match, index) {
     date: parseApiDate(match.date),
     home: home.name ?? '?',
     away: away.name ?? '?',
-    isHomeClub: home.clubRefId === CLUB_ID,
-    isAwayClub: away.clubRefId === CLUB_ID,
+    isHomeClub: home.clubRefId === clubCode,
+    isAwayClub: away.clubRefId === clubCode,
     facility: match.facility?.name ?? '',
     city: match.facility?.address?.city ?? '',
     field: match.field?.name ?? match.clubAddition?.name ?? '',
@@ -57,16 +55,17 @@ function normalize(match, index) {
 
 /**
  * @param {'program'|'results'} kind
+ * @param {string} clubCode KNKV-clubcode, bijv. NCX35M2
  * @returns {Promise<{matches: object[], raw: object[]}>}
  */
-export async function fetchMatches(kind, dateFrom, dateTo) {
-  const url = `${BASE}/${CLUB_ID}/${kind}?dateFrom=${dateFrom}&dateTo=${dateTo}`
+export async function fetchMatches(kind, dateFrom, dateTo, clubCode) {
+  const url = `${BASE}/${clubCode}/${kind}?dateFrom=${dateFrom}&dateTo=${dateTo}`
   const res = await fetch(url)
   if (!res.ok) throw new Error(`KNKV-API gaf status ${res.status}`)
   const weeks = await res.json()
   const raw = (Array.isArray(weeks) ? weeks : []).flatMap((w) => w.matches ?? [])
   const matches = raw
-    .map(normalize)
+    .map((match, index) => normalize(match, index, clubCode))
     .sort((a, b) => a.date - b.date)
   return { matches, raw }
 }

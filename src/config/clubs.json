@@ -1,0 +1,15 @@
+[
+  {
+    "id": "zwaluwen",
+    "name": "KV de Zwaluwen",
+    "clubCode": "NCX35M2",
+    "handle": "@kvdezwaluwen",
+    "logo": "/logo.svg",
+    "background": "/bg.jpg",
+    "colors": {
+      "club": "#005daa",
+      "clubdeep": "#0b3d6b",
+      "clubtint": "#1c7fcb"
+    }
+  }
+]
