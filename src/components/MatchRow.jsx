@@ -2,7 +2,7 @@ import { formatTime } from '../lib/dates.js'
 
 export default function MatchRow({ match }) {
   return (
-    <div className="flex items-center gap-6 rounded-2xl bg-surface px-[26px] py-5">
+    <div className="flex items-center gap-6 rounded-2xl bg-white px-[26px] py-5">
       <div className="min-w-[122px] text-[36px] font-extrabold tabular-nums text-club">
         {formatTime(match.date)}
       </div>

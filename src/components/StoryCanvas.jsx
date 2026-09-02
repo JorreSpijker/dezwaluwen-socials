@@ -57,9 +57,9 @@ export default function StoryCanvas({ ref, kind, matches, dateFrom, dateTo }) {
         <img
           src="/bg.jpg"
           alt=""
-          className="size-full scale-110 object-cover blur-[22px]"
+          className="size-full scale-110 object-cover blur-[10px]"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/62 via-white/84 to-white/92"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-white/62 via-white/56 to-white"></div>
       </div>
 
       <div className="relative h-[18px] shrink-0 bg-club"></div>
@@ -71,7 +71,7 @@ export default function StoryCanvas({ ref, kind, matches, dateFrom, dateTo }) {
             className="h-auto w-[260px] shrink-0"
           />
           <div className="flex min-w-0 flex-col gap-2.5">
-            <div className="text-[96px] leading-[0.9] font-black tracking-[-0.035em] text-club">
+            <div className="text-[96px] leading-[0.9] font-black tracking-[-0.075em] text-club">
               {kind === 'results' ? 'UITSLAGEN' : 'PROGRAMMA'}
             </div>
             <div className="font-barlow text-[30px] font-semibold tracking-[0.06em] text-muted">
