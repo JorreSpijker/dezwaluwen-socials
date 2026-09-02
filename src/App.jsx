@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { fetchMatches, ownTeams } from './api/korfbal.js'
-import { today, nextWeek, oneWeekAgo } from './lib/dates.js'
+import { today, nextWeek, oneWeekAgo, thisWeek } from './lib/dates.js'
 import { exportPng } from './lib/export.js'
 import Tabs from './components/Tabs.jsx'
 import Controls from './components/Controls.jsx'
@@ -32,6 +32,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    if (!dateFrom || !dateTo) return
     let cancelled = false
     setLoading(true)
     setError(null)
@@ -120,6 +121,7 @@ export default function App() {
             dateTo={dateTo}
             onDateFrom={(v) => setRange([v, dateTo])}
             onDateTo={(v) => setRange([dateFrom, v])}
+            onThisWeek={() => setRange(thisWeek())}
             teams={teams}
             hiddenTeams={hiddenTeams}
             onToggleTeam={toggleTeam}
