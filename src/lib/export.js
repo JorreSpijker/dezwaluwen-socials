@@ -5,13 +5,18 @@ import { toBlob } from 'html-to-image'
  * of Facebook), en valt terug op een download wanneer delen niet beschikbaar is.
  */
 export async function exportPng(node, filename) {
-  const blob = await toBlob(node, {
+  const options = {
     pixelRatio: 1,
     width: 1080,
     height: 1920,
-    cacheBust: true,
     style: { transform: 'none', transformOrigin: 'top left' },
-  })
+  }
+
+  // Safari meldt de SVG als geladen voordat de ingesloten afbeeldingen zijn
+  // gedecodeerd, waardoor de eerste render ze mist. De tweede render gebruikt
+  // de data-URL's die de eerste heeft gecachet en is daarmee wel compleet.
+  await toBlob(node, options)
+  const blob = await toBlob(node, options)
 
   const file = new File([blob], filename, { type: 'image/png' })
   if (navigator.canShare?.({ files: [file] })) {

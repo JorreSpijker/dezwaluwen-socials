@@ -51,15 +51,14 @@ export default function StoryCanvas({ ref, kind, matches, dateFrom, dateTo }) {
       ref={ref}
       className="relative flex h-[1920px] w-[1080px] shrink-0 flex-col overflow-hidden bg-white font-archivo"
     >
-      {/* Clubfoto als achtergrond: sterk vervaagd en onder een witte gradient,
-          zodat er kleur doorschemert zonder de leesbaarheid te raken. */}
-      <div className="absolute inset-0 overflow-hidden">
-        <img
-          src="/bg.jpg"
-          alt=""
-          className="size-full scale-110 object-cover blur-[10px]"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/62 via-white/56 to-white"></div>
+      {/* Clubfoto als achtergrond: onder een witte gradient, zodat er kleur
+          doorschemert zonder de leesbaarheid te raken. De blur zit in het
+          bestand zelf: Safari laat een CSS-filter vallen bij het exporteren.
+          Om dezelfde reden staan hier vaste pixelmaten in plaats van inset-0
+          en size-full — percentages klappen daar dicht naar 0. */}
+      <div className="absolute top-0 left-0 h-[1920px] w-[1080px] overflow-hidden">
+        <img src="/bg-blur.jpg" alt="" width="1080" height="1920" />
+        <div className="absolute top-0 left-0 h-[1920px] w-[1080px] bg-gradient-to-b from-white/62 via-white/56 to-white"></div>
       </div>
 
       <div className="relative h-[18px] shrink-0 bg-club"></div>

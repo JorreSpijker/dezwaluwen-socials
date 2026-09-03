@@ -24,6 +24,9 @@ function DateField({ label, value, onChange }) {
           type="date"
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          // Op desktop opent alleen het kalenderpictogram de picker, en dat is
+          // hier onzichtbaar. Een klik op het veld opent hem alsnog.
+          onClick={(e) => e.currentTarget.showPicker?.()}
           className="absolute inset-0 size-full cursor-pointer opacity-0"
         />
       </div>
