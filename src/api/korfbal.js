@@ -1,3 +1,5 @@
+import { mockMatches } from './mock.js'
+
 const BASE = 'https://api-mijn.korfbal.nl/api/v2/clubs'
 
 export const CLUB_ID = 'NCX35M2'
@@ -60,6 +62,10 @@ function normalize(match, index) {
  * @returns {Promise<{matches: object[], raw: object[]}>}
  */
 export async function fetchMatches(kind, dateFrom, dateTo) {
+  // Vite vervangt import.meta.env bij het bouwen door een letterlijke waarde,
+  // waardoor de testcontent buiten debugmode uit de bundle valt.
+  if (import.meta.env.VITE_DEBUG === 'true') return mockMatches(kind, dateFrom)
+
   const url = `${BASE}/${CLUB_ID}/${kind}?dateFrom=${dateFrom}&dateTo=${dateTo}`
   const res = await fetch(url)
   if (!res.ok) throw new Error(`KNKV-API gaf status ${res.status}`)
@@ -69,14 +75,4 @@ export async function fetchMatches(kind, dateFrom, dateTo) {
     .map(normalize)
     .sort((a, b) => a.date - b.date)
   return { matches, raw }
-}
-
-/** Alle eigen teams die in de respons voorkomen, gesorteerd. */
-export function ownTeams(matches) {
-  const names = new Set()
-  for (const m of matches) {
-    if (m.isHomeClub) names.add(m.home)
-    if (m.isAwayClub) names.add(m.away)
-  }
-  return [...names].sort((a, b) => a.localeCompare(b, 'nl', { numeric: true }))
 }

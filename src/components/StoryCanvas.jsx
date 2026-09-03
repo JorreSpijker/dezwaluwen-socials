@@ -1,50 +1,39 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { formatDayHeader, formatDayKey, formatRange } from '../lib/dates.js'
+import { formatDayHeader } from '../lib/dates.js'
 import MatchRow from './MatchRow.jsx'
 import ResultRow from './ResultRow.jsx'
 
-function groupByDay(matches) {
-  const groups = []
-  for (const match of matches) {
-    const key = formatDayKey(match.date)
-    const last = groups[groups.length - 1]
-    if (last && last.key === key) last.matches.push(match)
-    else groups.push({ key, date: match.date, matches: [match] })
-  }
-  return groups
-}
-
-export default function StoryCanvas({ ref, kind, matches, dateFrom, dateTo }) {
-  const groups = groupByDay(matches)
+export default function StoryCanvas({ ref, kind, groups, range, onMeasure }) {
   const Row = kind === 'results' ? ResultRow : MatchRow
 
-  // De lijst wordt als geheel teruggeschaald wanneer hij niet in het frame past,
-  // zodat de story altijd één afbeelding blijft. De breedte wordt mee opgerekt
-  // zodat de rijen na het schalen weer de volle kolombreedte vullen.
+  // De rijen staan op vaste grootte; past een dag niet in het frame, dan loopt
+  // hij door naar een volgende story. Wat daarvoor nodig is — de vrije hoogte
+  // en de hoogte van kop en rijen — meet deze canvas op verzoek terug.
   const listRef = useRef(null)
-  const innerRef = useRef(null)
-  const [scale, setScale] = useState(1)
+  const headerRef = useRef(null)
+  const rowRefs = useRef(new Map())
   const [, remeasure] = useState(0)
+
   useLayoutEffect(() => {
-    const natural = innerRef.current?.scrollHeight
-    const next = natural ? Math.min(1, listRef.current.clientHeight / natural) : 1
-    if (Math.abs(next - scale) > 0.004) setScale(next)
+    if (!onMeasure || !headerRef.current) return
+    const rows = new Map()
+    for (const [id, el] of rowRefs.current) rows.set(id, el.offsetHeight)
+    onMeasure({ list: listRef.current.clientHeight, header: headerRef.current.offsetHeight, rows })
   })
 
   // Lettertype en logo laden ná de eerste meting: het eerste verandert de
-  // hoogte van de lijst, het tweede die van de ruimte eromheen. Beide worden
-  // geobserveerd zodat de schaal daarna opnieuw wordt uitgerekend.
+  // hoogte van de rijen, het tweede die van de ruimte eromheen. Beide worden
+  // geobserveerd zodat er daarna opnieuw wordt gemeten.
+  // Zonder wedstrijden is er geen dagkop om te observeren. De sleutel van de
+  // eerste dag zit in de deps omdat React die kop opnieuw aanmaakt zodra er een
+  // andere dag bovenaan staat.
   useLayoutEffect(() => {
-    if (!innerRef.current) return
+    if (!onMeasure || !headerRef.current) return
     const observer = new ResizeObserver(() => remeasure((n) => n + 1))
-    observer.observe(innerRef.current)
     observer.observe(listRef.current)
+    observer.observe(headerRef.current)
     return () => observer.disconnect()
-  }, [matches, kind])
-
-  const range = matches.length
-    ? formatRange(matches[0].date, matches[matches.length - 1].date)
-    : formatRange(dateFrom, dateTo)
+  }, [onMeasure, groups[0]?.key])
 
   return (
     <div
@@ -81,27 +70,30 @@ export default function StoryCanvas({ ref, kind, matches, dateFrom, dateTo }) {
         <div className="mt-[38px] mb-[34px] h-[3px] shrink-0 bg-club"></div>
 
         <div ref={listRef} className="min-h-0 flex-1 overflow-hidden">
-          {matches.length === 0 ? (
+          {groups.length === 0 ? (
             <p className="pt-24 text-center text-[40px] text-muted">
               Geen wedstrijden in dit bereik
             </p>
           ) : (
-            <div
-              ref={innerRef}
-              className="flex flex-col gap-[30px]"
-              style={{
-                transform: `scale(${scale})`,
-                transformOrigin: 'top left',
-                width: `${100 / scale}%`,
-              }}
-            >
-              {groups.map((group) => (
+            <div className="flex flex-col gap-[30px]">
+              {groups.map((group, index) => (
                 <div key={group.key} className="flex flex-col gap-3">
-                  <div className="self-start rounded-md bg-clubtint px-5 py-[9px] text-2xl font-extrabold tracking-[0.14em] text-white uppercase">
+                  <div
+                    ref={index === 0 ? headerRef : undefined}
+                    className="self-start rounded-md bg-clubtint px-5 py-[9px] text-2xl font-extrabold tracking-[0.14em] text-white uppercase"
+                  >
                     {formatDayHeader(group.date)}
                   </div>
                   {group.matches.map((match) => (
-                    <Row key={match.id} match={match} />
+                    <div
+                      key={match.id}
+                      ref={(el) => {
+                        if (el) rowRefs.current.set(match.id, el)
+                        else rowRefs.current.delete(match.id)
+                      }}
+                    >
+                      <Row match={match} />
+                    </div>
                   ))}
                 </div>
               ))}

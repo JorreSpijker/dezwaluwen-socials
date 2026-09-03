@@ -16,6 +16,13 @@ export const thisWeek = () => [
 /** yyyy-MM-dd (waarde van een date-input) naar dd-MM-yyyy voor weergave. */
 export const formatInputDate = (value) => (value ? format(parseISO(value), 'dd-MM-yyyy') : '')
 
+/** yyyy-MM-dd plus HH:mm naar een Date in de lokale tijdzone. */
+export function parseDateTime(date, time) {
+  const [year, month, day] = date.split('-').map(Number)
+  const [hour, minute] = time.split(':').map(Number)
+  return new Date(year, month - 1, day, hour, minute)
+}
+
 export const formatDayHeader = (date) => format(date, 'EEEE d MMMM', { locale: nl })
 export const formatTime = (date) => format(date, 'HH:mm')
 export const formatDayKey = (date) => format(date, 'yyyy-MM-dd')
