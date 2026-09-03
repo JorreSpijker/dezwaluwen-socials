@@ -1,0 +1,2 @@
+[] Zijbalk boven de afbeeldingen op mobiel.
+[] op mobiel is het onduidelijk dat je de volgorde aan het aanpassen bent. Is het een idee om een outline toe te voegen aan het element als je de volgorde van dat element wijzigt.
