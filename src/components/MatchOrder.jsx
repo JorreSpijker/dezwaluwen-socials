@@ -40,7 +40,7 @@ function SortableMatch({ match, shown, onToggle, onEdit, onRemove }) {
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`flex items-center gap-2 rounded-md bg-white pl-2 text-sm text-slate-700 ${
-        isDragging ? 'relative z-10 shadow-md' : ''
+        isDragging ? 'relative z-10 shadow-md outline-2 outline-[#0b2545]' : ''
       }`}
     >
       <input

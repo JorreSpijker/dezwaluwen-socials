@@ -185,16 +185,15 @@ export default function App() {
       <div className="mx-auto grid max-w-6xl gap-6 px-4 pt-6 pb-32 lg:grid-cols-[20rem_1fr] lg:gap-10 lg:px-8 lg:pb-10">
         {/* Vanaf lg één zijbalk die blijft staan terwijl de preview doorloopt.
             Op mobiel is er geen zijbalk: de wrapper valt weg met display:
-            contents, zodat de tabs, de preview en de instellingen los in de
-            kolom staan. Hun volgorde ligt daar vast met row-start, omdat de
-            preview in de DOM ná de instellingen komt. */}
+            contents, zodat de tabs, de instellingen en de preview in DOM-volgorde
+            onder elkaar staan — de instellingen dus bóven de afbeeldingen. */}
         <div className="contents lg:sticky lg:top-6 lg:col-start-1 lg:row-start-1 lg:block lg:max-h-[calc(100vh-3rem)] lg:space-y-10 lg:self-start lg:overflow-y-auto">
-          <div className="row-start-1 min-w-0 space-y-4">
+          <div className="min-w-0 space-y-4">
             <h1 className="text-xl font-bold text-slate-900 sr-only">De Zwaluwen — socials</h1>
             <Tabs tab={tab} onChange={changeTab} />
           </div>
 
-          <div className="row-start-3 min-w-0 space-y-5">
+          <div className="min-w-0 space-y-5">
             <Controls
               dateFrom={dateFrom}
               dateTo={dateTo}
@@ -270,7 +269,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="row-start-2 min-w-0 space-y-4 lg:col-start-2 lg:row-start-1">
+        <div className="min-w-0 space-y-4 lg:col-start-2 lg:row-start-1">
           {/* Op desktop zo groot als de vensterhoogte toelaat (story is 9:16). */}
           {pages.map((groups, index) => (
             <div
