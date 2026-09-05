@@ -22,18 +22,20 @@ function toScore(value) {
   if (typeof value === 'object') {
     const home = value.home ?? value.homeScore ?? value.home_score ?? value.goalsHome
     const away = value.away ?? value.awayScore ?? value.away_score ?? value.goalsAway
-    if (home != null && away != null) return { home: Number(home), away: Number(away) }
+    if (Number.isFinite(Number(home)) && Number.isFinite(Number(away))) {
+      return { home: Number(home), away: Number(away) }
+    }
   }
   return null
 }
 
-// De vorm van een uitslag-object is niet empirisch te verifiëren zolang de API
-// geen gespeelde wedstrijden teruggeeft; daarom meerdere plekken proberen.
+// De API levert de uitslag als stats.home.score / stats.away.score; de overige
+// plekken blijven als terugval staan.
 function extractScore(match) {
   return (
+    toScore({ home: match.stats?.home?.score, away: match.stats?.away?.score }) ??
     toScore(match.score) ??
     toScore(match.result) ??
-    toScore(match.stats) ??
     toScore({ home: match.teams?.home?.score, away: match.teams?.away?.score }) ??
     null
   )
