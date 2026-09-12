@@ -2,7 +2,7 @@ import { formatTime } from '../lib/dates.js'
 
 export default function MatchRow({ match }) {
   return (
-    <div className="flex items-center gap-6 rounded-2xl bg-white px-[26px] py-5">
+    <div className="relative flex items-center gap-6 rounded-2xl bg-white px-[26px] py-5">
       <div className="min-w-[122px] text-[36px] font-extrabold tabular-nums text-club">
         {formatTime(match.date)}
       </div>
@@ -16,6 +16,12 @@ export default function MatchRow({ match }) {
           {match.away}
         </span>
       </div>
+      {/* Absoluut: de plaats mag de rij niet hoger maken. */}
+      {match.city && (
+        <div className="absolute right-[26px] bottom-[6px] font-barlow text-[20px] font-semibold tracking-[0.04em] text-muted">
+          {match.city}
+        </div>
+      )}
     </div>
   )
 }

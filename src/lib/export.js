@@ -1,18 +1,18 @@
 import { toBlob } from 'html-to-image'
 
-const OPTIONS = {
+const options = (format) => ({
   pixelRatio: 1,
-  width: 1080,
-  height: 1920,
+  width: format.width,
+  height: format.height,
   style: { transform: 'none', transformOrigin: 'top left' },
-}
+})
 
-async function render(node) {
+async function render(node, format) {
   // Safari meldt de SVG als geladen voordat de ingesloten afbeeldingen zijn
   // gedecodeerd, waardoor de eerste render ze mist. De tweede render gebruikt
   // de data-URL's die de eerste heeft gecachet en is daarmee wel compleet.
-  await toBlob(node, OPTIONS)
-  return toBlob(node, OPTIONS)
+  await toBlob(node, options(format))
+  return toBlob(node, options(format))
 }
 
 /**
@@ -20,15 +20,18 @@ async function render(node) {
  * Instagram of Facebook), en valt terug op downloads wanneer delen niet
  * beschikbaar is. Meerdere pagina's worden als losse afbeeldingen aangeboden.
  *
- * @param {HTMLElement[]} nodes één node per pagina
- * @param {string} baseName bestandsnaam zonder nummer en extensie
+ * @param {{node: HTMLElement, format: object, index: number, total: number}[]} items
+ *   één item per pagina, per formaat
+ * @param {string} baseName bestandsnaam zonder formaat, nummer en extensie
  */
-export async function exportPng(nodes, baseName) {
+export async function exportPng(items, baseName) {
   const files = []
-  for (const [index, node] of nodes.entries()) {
-    const blob = await render(node)
-    const suffix = nodes.length > 1 ? `-${index + 1}` : ''
-    files.push(new File([blob], `${baseName}${suffix}.png`, { type: 'image/png' }))
+  for (const { node, format, index, total } of items) {
+    const blob = await render(node, format)
+    const suffix = total > 1 ? `-${index + 1}` : ''
+    files.push(
+      new File([blob], `${baseName}-${format.key}${suffix}.png`, { type: 'image/png' }),
+    )
   }
 
   if (navigator.canShare?.({ files })) {

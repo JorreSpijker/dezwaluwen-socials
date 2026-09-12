@@ -13,7 +13,7 @@ export default function ResultRow({ match }) {
   const { score } = match
 
   return (
-    <div className="flex items-center gap-6 rounded-2xl bg-white px-[26px] py-5">
+    <div className="relative flex items-center gap-6 rounded-2xl bg-white px-[26px] py-5">
       <div className="min-w-0 flex-1 text-[34px] leading-[1.15] text-muted">
         <span className={match.isHomeClub ? 'font-extrabold text-clubdeep' : 'font-medium'}>
           {match.home}
@@ -31,6 +31,13 @@ export default function ResultRow({ match }) {
       >
         {score ? `${score.home}-${score.away}` : '–'}
       </div>
+      {/* Absoluut, links van het scoreblok: de plaats mag de rij niet hoger
+          maken en niet onder de score schuiven. */}
+      {match.city && (
+        <div className="absolute right-[208px] bottom-[6px] font-barlow text-[20px] font-semibold tracking-[0.04em] text-muted">
+          {match.city}
+        </div>
+      )}
     </div>
   )
 }

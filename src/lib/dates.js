@@ -1,4 +1,4 @@
-import { format, addDays, subDays, startOfWeek, endOfWeek, parseISO } from 'date-fns'
+import { format, addDays, subDays, startOfWeek, endOfWeek, parseISO, isSameDay } from 'date-fns'
 import { nl } from 'date-fns/locale'
 
 const iso = (d) => format(d, 'yyyy-MM-dd')
@@ -31,5 +31,7 @@ export const formatDayKey = (date) => format(date, 'yyyy-MM-dd')
 export function formatRange(from, to) {
   const a = typeof from === 'string' ? parseISO(from) : from
   const b = typeof to === 'string' ? parseISO(to) : to
+  // Eén dag: de dagkop in de lijst toont de datum al.
+  if (isSameDay(a, b)) return ''
   return `${format(a, 'd MMMM', { locale: nl })} t/m ${format(b, 'd MMMM yyyy', { locale: nl })}`
 }

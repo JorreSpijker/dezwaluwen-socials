@@ -13,6 +13,7 @@ import { groupByDay, paginate } from './lib/paginate.js'
 import { applyOrder, moveWithinDay } from './lib/order.js'
 import { clearState, loadState, saveState } from './lib/storage.js'
 import { exportPng } from './lib/export.js'
+import { FORMATS, FORMAT_LIST } from './lib/formats.js'
 import Tabs from './components/Tabs.jsx'
 import Controls from './components/Controls.jsx'
 import MatchOrder from './components/MatchOrder.jsx'
@@ -42,14 +43,20 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [exporting, setExporting] = useState(false)
-  const canvasRefs = useRef([])
+  // Welk formaat in de preview staat; geëxporteerd worden ze altijd allebei.
+  const [format, setFormat] = useState('story')
+  const canvasRefs = useRef({ story: [], post: [] })
 
   // De rijen staan op vaste grootte. Een verborgen canvas met álle wedstrijden
   // meet hoe hoog ze uitvallen; daarmee worden ze over zoveel story's verdeeld
   // als nodig.
-  const [metrics, setMetrics] = useState(null)
-  const onMeasure = useCallback((next) => {
-    setMetrics((prev) => (sameMetrics(prev, next) ? prev : next))
+  // Elk formaat heeft zijn eigen vrije hoogte en dus zijn eigen paginering.
+  const [metrics, setMetrics] = useState({ story: null, post: null })
+  const onMeasureStory = useCallback((next) => {
+    setMetrics((prev) => (sameMetrics(prev.story, next) ? prev : { ...prev, story: next }))
+  }, [])
+  const onMeasurePost = useCallback((next) => {
+    setMetrics((prev) => (sameMetrics(prev.post, next) ? prev : { ...prev, post: next }))
   }, [])
 
   // De preview schaalt mee met de beschikbare breedte, zodat de story op een
@@ -103,7 +110,9 @@ export default function App() {
   const orderedGroups = useMemo(() => groupByDay(ordered), [ordered])
   const visible = useMemo(() => ordered.filter((m) => !hidden.has(m.id)), [ordered, hidden])
   const visibleGroups = useMemo(() => groupByDay(visible), [visible])
-  const pages = useMemo(() => paginate(visible, metrics), [visible, metrics])
+  const storyPages = useMemo(() => paginate(visible, metrics.story), [visible, metrics.story])
+  const postPages = useMemo(() => paginate(visible, metrics.post), [visible, metrics.post])
+  const pages = format === 'post' ? postPages : storyPages
 
   // Het bereik in de kop blijft op elke pagina dat van de hele selectie.
   const range = visible.length
@@ -172,7 +181,21 @@ export default function App() {
     setExporting(true)
     try {
       const name = tab === 'results' ? 'uitslagen' : 'programma'
-      await exportPng(canvasRefs.current.slice(0, pages.length), `zwaluwen-${name}-${dateFrom}`)
+      const items = [
+        ...storyPages.map((_, index) => ({
+          node: canvasRefs.current.story[index],
+          format: FORMATS.story,
+          index,
+          total: storyPages.length,
+        })),
+        ...postPages.map((_, index) => ({
+          node: canvasRefs.current.post[index],
+          format: FORMATS.post,
+          index,
+          total: postPages.length,
+        })),
+      ]
+      await exportPng(items, `zwaluwen-${name}-${dateFrom}`)
     } catch (err) {
       setError(`Export mislukt: ${err.message}`)
     } finally {
@@ -241,8 +264,8 @@ export default function App() {
             {error && <p className="text-sm text-red-600">{error}</p>}
             {!loading && !error && (
               <p className="text-sm text-slate-500">
-                {visible.length} van {matches.length} wedstrijden zichtbaar
-                {pages.length > 1 && ` — ${pages.length} afbeeldingen`}
+                {visible.length} van {matches.length} wedstrijden zichtbaar —{' '}
+                {storyPages.length + postPages.length} afbeeldingen
               </p>
             )}
 
@@ -270,35 +293,75 @@ export default function App() {
         </div>
 
         <div className="min-w-0 space-y-4 lg:col-start-2 lg:row-start-1">
-          {/* Op desktop zo groot als de vensterhoogte toelaat (story is 9:16). */}
+          <div className="flex gap-2 rounded-lg bg-slate-200 p-1">
+            {FORMAT_LIST.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setFormat(f.key)}
+                className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition ${
+                  format === f.key
+                    ? 'bg-white text-slate-900 shadow'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Op desktop zo groot als de vensterhoogte toelaat; de verhouding
+              komt uit het gekozen formaat. */}
           {pages.map((groups, index) => (
             <div
               key={index}
               ref={index === 0 ? frameRef : undefined}
-              className="mx-auto w-full max-w-[420px] overflow-hidden bg-white shadow-lg lg:mx-0 lg:w-[min(100%,calc((100vh-7rem)/1.7778))] lg:max-w-none"
-              style={{ height: 1920 * scale }}
+              className="mx-auto w-full max-w-[420px] overflow-hidden bg-white shadow-lg lg:mx-0 lg:w-[min(100%,calc((100vh-7rem)/var(--ratio)))] lg:max-w-none"
+              style={{
+                height: FORMATS[format].height * scale,
+                '--ratio': FORMATS[format].height / FORMATS[format].width,
+              }}
             >
               <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
                 <StoryCanvas
-                  ref={(el) => (canvasRefs.current[index] = el)}
+                  ref={(el) => (canvasRefs.current[format][index] = el)}
                   kind={tab}
                   groups={groups}
                   range={range}
+                  format={FORMATS[format]}
                 />
               </div>
             </div>
           ))}
         </div>
 
-        {/* Meetcanvas: staat buiten beeld op ware grootte en levert de hoogtes
-            waarmee de pagina's worden bepaald. */}
+        {/* Buiten beeld op ware grootte: de meetcanvassen die de hoogtes per
+            formaat leveren, en de pagina's van het formaat dat nu niet in de
+            preview staat — die moeten wel bestaan om mee te exporteren. */}
         <div className="pointer-events-none fixed top-0 left-0 -z-10 opacity-0" aria-hidden="true">
           <StoryCanvas
             kind={tab}
             groups={visibleGroups}
             range={range}
-            onMeasure={onMeasure}
+            format={FORMATS.story}
+            onMeasure={onMeasureStory}
           />
+          <StoryCanvas
+            kind={tab}
+            groups={visibleGroups}
+            range={range}
+            format={FORMATS.post}
+            onMeasure={onMeasurePost}
+          />
+          {(format === 'story' ? postPages : storyPages).map((groups, index) => (
+            <StoryCanvas
+              key={index}
+              ref={(el) => (canvasRefs.current[format === 'story' ? 'post' : 'story'][index] = el)}
+              kind={tab}
+              groups={groups}
+              range={range}
+              format={format === 'story' ? FORMATS.post : FORMATS.story}
+            />
+          ))}
         </div>
 
       </div>
