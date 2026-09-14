@@ -2,11 +2,12 @@
 // (bijv. een combinatieteam), dan is er geen winnaar om te kleuren.
 function outcome(match) {
   const { score, isHomeClub, isAwayClub } = match
-  if (!score) return 'bg-muted'
-  if (score.home === score.away || (isHomeClub && isAwayClub)) return 'bg-draw'
+  if (!score) return 'bg-muted text-white'
+  // Geel is te licht voor witte cijfers, vandaar donkere tekst bij gelijkspel.
+  if (score.home === score.away || (isHomeClub && isAwayClub)) return 'bg-draw text-clubdeep'
   const clubScore = isHomeClub ? score.home : score.away
   const otherScore = isHomeClub ? score.away : score.home
-  return clubScore > otherScore ? 'bg-win' : 'bg-loss'
+  return clubScore > otherScore ? 'bg-win text-white' : 'bg-loss text-white'
 }
 
 export default function ResultRow({ match }) {
@@ -27,7 +28,7 @@ export default function ResultRow({ match }) {
           verticale padding: daarmee is een uitslagrij exact even hoog als een
           programmarij. */}
       <div
-        className={`min-w-[158px] rounded-[10px] px-[22px] text-center text-[36px] font-extrabold tabular-nums text-white ${outcome(match)}`}
+        className={`min-w-[158px] rounded-[10px] px-[22px] text-center text-[36px] font-extrabold tabular-nums ${outcome(match)}`}
       >
         {score ? `${score.home}-${score.away}` : '–'}
       </div>
