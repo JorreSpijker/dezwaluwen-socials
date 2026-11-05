@@ -1,61 +1,38 @@
 import { mockMatches } from './mock.js'
 
-const BASE = 'https://api-mijn.korfbal.nl/api/v2/clubs'
+const BASE = 'https://api-saas-site-prod-236.dotlab.net/general/api/competition/clubs'
 
 export const CLUB_ID = 'NCX35M2'
 
-// De API-datum draagt de juiste offset (+0200). We lezen de wall-clock-waarde
-// rechtstreeks uit de string zodat de tijdzone van de browser de getoonde tijd
-// nooit verschuift.
-function parseApiDate(value) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value ?? '')
-  if (!m) return new Date(value)
-  return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5])
+// matchDate en startTime zijn lokale wall-clock-waarden zonder offset; zo
+// verschuift de tijdzone van de browser de getoonde tijd nooit.
+function parseApiDate(date, time) {
+  const [year, month, day] = date.split('-').map(Number)
+  const [hour, minute] = (time ?? '00:00').split(':').map(Number)
+  return new Date(year, month - 1, day, hour, minute)
 }
 
-function toScore(value) {
-  if (value == null) return null
-  if (typeof value === 'string') {
-    const m = /(\d+)\s*[-–:]\s*(\d+)/.exec(value)
-    return m ? { home: +m[1], away: +m[2] } : null
-  }
-  if (typeof value === 'object') {
-    const home = value.home ?? value.homeScore ?? value.home_score ?? value.goalsHome
-    const away = value.away ?? value.awayScore ?? value.away_score ?? value.goalsAway
-    if (Number.isFinite(Number(home)) && Number.isFinite(Number(away))) {
-      return { home: Number(home), away: Number(away) }
-    }
-  }
-  return null
+// Een nog niet gespeelde wedstrijd heeft score null bij beide teams.
+function extractScore(home, away) {
+  if (home.score == null || away.score == null) return null
+  return { home: Number(home.score), away: Number(away.score) }
 }
 
-// De API levert de uitslag als stats.home.score / stats.away.score; de overige
-// plekken blijven als terugval staan.
-function extractScore(match) {
-  return (
-    toScore({ home: match.stats?.home?.score, away: match.stats?.away?.score }) ??
-    toScore(match.score) ??
-    toScore(match.result) ??
-    toScore({ home: match.teams?.home?.score, away: match.teams?.away?.score }) ??
-    null
-  )
-}
-
-function normalize(match, index) {
-  const home = match.teams?.home ?? {}
-  const away = match.teams?.away ?? {}
+function normalize(match) {
+  const home = match.homeTeam ?? {}
+  const away = match.awayTeam ?? {}
   return {
-    id: `${match.ref_id ?? 'x'}-${index}`,
-    date: parseApiDate(match.date),
-    home: home.name ?? '?',
-    away: away.name ?? '?',
+    id: String(match.internalMatchId),
+    date: parseApiDate(match.matchDate, match.startTime),
+    home: home.teamName ?? '?',
+    away: away.teamName ?? '?',
     isHomeClub: home.clubRefId === CLUB_ID,
     isAwayClub: away.clubRefId === CLUB_ID,
     facility: match.facility?.name ?? '',
     city: match.facility?.address?.city ?? '',
-    field: match.field?.name ?? match.clubAddition?.name ?? '',
+    field: match.field?.name ?? '',
     pool: match.pool?.name ?? '',
-    score: extractScore(match),
+    score: extractScore(home, away),
   }
 }
 
@@ -68,11 +45,18 @@ export async function fetchMatches(kind, dateFrom, dateTo) {
   // waardoor de testcontent buiten debugmode uit de bundle valt.
   if (import.meta.env.VITE_DEBUG === 'true') return mockMatches(kind, dateFrom)
 
-  const url = `${BASE}/${CLUB_ID}/${kind}?dateFrom=${dateFrom}&dateTo=${dateTo}`
-  const res = await fetch(url)
+  const params = new URLSearchParams({
+    dt: 1,
+    teamDetails: true,
+    facility: true,
+    dateFrom,
+    dateTo,
+    start: 0,
+    length: 500,
+  })
+  const res = await fetch(`${BASE}/${CLUB_ID}/${kind}?${params}`)
   if (!res.ok) throw new Error(`KNKV-API gaf status ${res.status}`)
-  const weeks = await res.json()
-  const raw = (Array.isArray(weeks) ? weeks : []).flatMap((w) => w.matches ?? [])
+  const raw = (await res.json()).data ?? []
   const matches = raw
     .map(normalize)
     .sort((a, b) => a.date - b.date)
