@@ -13,6 +13,12 @@ export const thisWeek = () => [
   iso(endOfWeek(new Date(), { weekStartsOn: 1 })),
 ]
 
+/** Laatste dag van het lopende seizoen: 31 juli; vanaf augustus die van volgend jaar. */
+export function seasonEnd() {
+  const now = new Date()
+  return `${now.getMonth() >= 7 ? now.getFullYear() + 1 : now.getFullYear()}-07-31`
+}
+
 /** yyyy-MM-dd (waarde van een date-input) naar dd-MM-yyyy voor weergave. */
 export const formatInputDate = (value) => (value ? format(parseISO(value), 'dd-MM-yyyy') : '')
 
@@ -22,6 +28,10 @@ export function parseDateTime(date, time) {
   const [hour, minute] = time.split(':').map(Number)
   return new Date(year, month - 1, day, hour, minute)
 }
+
+/** yyyy-MM-dd naar 5 november 2026. */
+export const formatLongDate = (value) =>
+  value ? format(parseISO(value), 'd MMMM yyyy', { locale: nl }) : ''
 
 export const formatDayHeader = (date) => format(date, 'EEEE d MMMM', { locale: nl })
 export const formatTime = (date) => format(date, 'HH:mm')

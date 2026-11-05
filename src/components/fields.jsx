@@ -74,3 +74,50 @@ export function TimeField({ label, value, onChange }) {
     </label>
   )
 }
+
+// Een data-URL in plaats van een blob-URL: die neemt html-to-image zonder
+// ophalen mee in de export.
+export const FITS = [
+  { key: 'cover', label: 'Uitrekken' },
+  { key: 'contain', label: 'Passend maken' },
+]
+
+export function PhotoField({ label, onChange, fit, onFit }) {
+  function choose(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => onChange(reader.result)
+    reader.readAsDataURL(file)
+  }
+
+  return (
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-slate-700">
+        {label}
+        <input
+          type="file"
+          accept="image/*"
+          onChange={choose}
+          className="mt-1 block w-full text-sm text-slate-700 file:mr-3 file:min-h-11 file:rounded-md file:border file:border-slate-300 file:bg-white file:px-4 file:text-base file:font-medium file:text-slate-700"
+        />
+      </label>
+      <div className="flex gap-2 rounded-lg bg-slate-200 p-1">
+        {FITS.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => onFit(f.key)}
+            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${
+              fit === f.key ? 'bg-white text-slate-900 shadow' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export const TEXTAREA =
+  'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-900'
