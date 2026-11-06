@@ -49,7 +49,9 @@ export async function exportPng(items, baseName) {
     link.href = url
     link.download = file.name
     link.click()
-    URL.revokeObjectURL(url)
+    // Direct intrekken breekt de download in Safari en Firefox; die lezen de
+    // URL pas na de klik.
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
   return 'downloaded'
 }
