@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { fetchMatches } from '../api/korfbal.js'
 import { formatDayHeader, formatTime, thisWeek } from '../lib/dates.js'
 import { groupByDay } from '../lib/paginate.js'
-import { PAGES } from '../lib/pages.js'
+import { PAGES, pagePath } from '../lib/pages.js'
 
 // Eigen team vet, zoals op de afbeeldingen.
 function Teams({ match }) {
@@ -85,7 +85,7 @@ export default function Home() {
         {PAGES.filter((page) => page.id !== 'home').map((page) => (
           <a
             key={page.id}
-            href={`#/${page.id}`}
+            href={pagePath(page.id)}
             className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-club"
           >
             <div className="flex items-center justify-between gap-2">

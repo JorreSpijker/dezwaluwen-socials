@@ -11,8 +11,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
  * De maten staan in pixels, gemeten en berekend: Safari laat percentages
  * vallen bij het exporteren. Om dezelfde reden een achtergrond in plaats van
  * een <img> met object-fit.
+ *
+ * Met `padding` (voor een logo) krijgt een geplaatste afbeelding een witte
+ * achtergrond met die ruimte eromheen.
  */
-export default function PhotoBox({ photo, fit, empty, gap = 0, children }) {
+export default function PhotoBox({ photo, fit, empty, gap = 0, padding = 0, children }) {
   const areaRef = useRef(null)
   const belowRef = useRef(null)
   const [area, setArea] = useState(null)
@@ -40,11 +43,14 @@ export default function PhotoBox({ photo, fit, empty, gap = 0, children }) {
 
   let size = area
   if (fit === 'contain' && area && ratio) {
-    size =
-      area.width / area.height > ratio
-        ? { width: Math.round(area.height * ratio), height: area.height }
-        : { width: area.width, height: Math.round(area.width / ratio) }
+    const inner = { width: area.width - 2 * padding, height: area.height - 2 * padding }
+    const fitted =
+      inner.width / inner.height > ratio
+        ? { width: Math.round(inner.height * ratio), height: inner.height }
+        : { width: inner.width, height: Math.round(inner.width / ratio) }
+    size = { width: fitted.width + 2 * padding, height: fitted.height + 2 * padding }
   }
+  const padded = Boolean(padding && photo)
 
   return (
     <div
@@ -60,8 +66,11 @@ export default function PhotoBox({ photo, fit, empty, gap = 0, children }) {
             width: size.width,
             height: size.height,
             backgroundImage: photo ? `url(${photo})` : undefined,
+            padding: padded ? padding : undefined,
           }}
-          className="shrink-0 rounded-2xl bg-surface bg-cover bg-center"
+          className={`shrink-0 rounded-2xl bg-center ${
+            padded ? 'bg-white bg-contain bg-origin-content bg-no-repeat' : 'bg-surface bg-cover'
+          }`}
         >
           {!photo && <p className="pt-24 text-center text-[40px] text-muted">{empty}</p>}
         </div>

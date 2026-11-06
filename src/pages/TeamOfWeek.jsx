@@ -1,48 +1,34 @@
-import { useEffect, useState } from 'react'
-import { fetchMatches } from '../api/korfbal.js'
-import { formatDayHeader, formatTime, seasonEnd, today } from '../lib/dates.js'
+import { useState } from 'react'
+import { today } from '../lib/dates.js'
 import { FIELD, PhotoField, TEXTAREA } from '../components/fields.jsx'
+import {
+  FirstTeamMatchField,
+  FirstTeamMatchStatus,
+  useFirstTeamMatches,
+} from '../components/FirstTeamMatch.jsx'
 import Generator from '../components/Generator.jsx'
 import TeamCanvas from '../components/TeamCanvas.jsx'
 
-// Het eerste seniorenteam. Aan de kant van de eigen club, zodat een
-// tegenstander die toevallig ook op "Zwaluwen 1" eindigt niet meetelt.
-const isFirstTeam = (match) =>
-  (match.isHomeClub && /Zwaluwen 1$/.test(match.home)) ||
-  (match.isAwayClub && /Zwaluwen 1$/.test(match.away))
+// Wat de Voorbeeld-tab toont; de wedstrijd blijft de gekozen wedstrijd.
+const EXAMPLE = {
+  photo: '/dummy_teamvandeweek.jpg',
+  fit: 'cover',
+  team: 'Zwaluwen J7',
+  text: 'Deze week in het zonnetje: de J7! Ze wonnen zaterdag hun derde wedstrijd op rij.',
+}
 
 export default function TeamOfWeek() {
-  // Alleen S1, van vandaag tot het eind van het seizoen.
-  const [matches, setMatches] = useState([])
-  // undefined = automatisch de eerstvolgende, '' = geen wedstrijd, anders een id.
-  const [matchId, setMatchId] = useState()
+  const firstTeam = useFirstTeamMatches()
   const [photo, setPhoto] = useState(null)
   const [fit, setFit] = useState('cover')
   const [team, setTeam] = useState('')
   const [text, setText] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    fetchMatches('program', today(), seasonEnd())
-      .then((result) => !cancelled && setMatches(result.matches.filter(isFirstTeam)))
-      .catch((err) => !cancelled && setError(err.message))
-      .finally(() => !cancelled && setLoading(false))
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const selectedId = matchId === undefined ? matches[0]?.id : matchId
-  const match = matches.find((m) => m.id === selectedId) ?? null
 
   return (
     <Generator
       fileName={`zwaluwen-team-van-de-week-${today()}`}
       canExport={Boolean(photo)}
-      renderCanvas={(format, ref) => (
+      renderCanvas={(format, ref, isExample) => (
         <TeamCanvas
           ref={ref}
           format={format}
@@ -50,18 +36,12 @@ export default function TeamOfWeek() {
           fit={fit}
           team={team}
           text={text}
-          match={match}
+          match={firstTeam.match}
+          {...(isExample && EXAMPLE)}
         />
       )}
-      status={
-        <>
-          {loading && <p className="text-sm text-slate-500">Laden…</p>}
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          {!loading && !error && matches.length === 0 && (
-            <p className="text-sm text-slate-500">Geen wedstrijden meer van Zwaluwen 1 dit seizoen.</p>
-          )}
-        </>
-      }
+      example="Zo kan team van de week eruitzien: teamfoto, teamnaam, tekst en de wedstrijd van Zwaluwen 1."
+      status={<FirstTeamMatchStatus {...firstTeam} />}
       settings={
         <>
           <PhotoField label="Teamfoto" onChange={setPhoto} fit={fit} onFit={setFit} />
@@ -86,21 +66,7 @@ export default function TeamOfWeek() {
             />
           </label>
 
-          <label className="block text-sm font-medium text-slate-700">
-            Wedstrijd Zwaluwen 1
-            <select
-              value={selectedId ?? ''}
-              onChange={(e) => setMatchId(e.target.value)}
-              className={`mt-1 ${FIELD}`}
-            >
-              <option value="">Geen wedstrijd</option>
-              {matches.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {formatDayHeader(m.date)} {formatTime(m.date)} · {m.home} – {m.away}
-                </option>
-              ))}
-            </select>
-          </label>
+          <FirstTeamMatchField {...firstTeam} />
         </>
       }
     />

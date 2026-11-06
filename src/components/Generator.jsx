@@ -2,15 +2,25 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { exportPng } from '../lib/export.js'
 import { FORMATS, FORMAT_LIST } from '../lib/formats.js'
 
+const TABS = [
+  { key: 'settings', label: 'Instellingen' },
+  { key: 'example', label: 'Voorbeeld' },
+]
+
 /**
  * Opbouw van een generator met één afbeelding per formaat: links de preview,
  * rechts de instellingen (op mobiel erboven) en de exportknop. De pagina
  * levert alleen de velden en het canvas.
  *
- * @param {(format: object, ref: Function) => JSX.Element} renderCanvas
+ * Met `example` (een korte uitleg) komt er een tab Voorbeeld bij: de preview
+ * en export tonen dan vaste voorbeelddata, de eigen invoer blijft bewaard.
+ *
+ * @param {(format: object, ref: Function, isExample: boolean) => JSX.Element} renderCanvas
  */
-export default function Generator({ settings, renderCanvas, fileName, canExport, status }) {
+export default function Generator({ settings, renderCanvas, fileName, canExport, status, example }) {
   const [format, setFormat] = useState('story')
+  const [tab, setTab] = useState('settings')
+  const isExample = tab === 'example'
   const [exporting, setExporting] = useState(false)
   const [error, setError] = useState(null)
   const canvasRefs = useRef({})
@@ -36,7 +46,7 @@ export default function Generator({ settings, renderCanvas, fileName, canExport,
         index: 0,
         total: 1,
       }))
-      await exportPng(items, fileName)
+      await exportPng(items, isExample ? `${fileName}-voorbeeld` : fileName)
     } catch (err) {
       setError(`Export mislukt: ${err.message}`)
     } finally {
@@ -50,14 +60,37 @@ export default function Generator({ settings, renderCanvas, fileName, canExport,
     <div className="mx-auto grid max-w-6xl gap-6 px-4 pt-6 pb-32 lg:grid-cols-[1fr_22rem] lg:gap-10 lg:px-8 lg:pb-10">
       <div className="contents lg:sticky lg:top-20 lg:col-start-2 lg:row-start-1 lg:block lg:h-[calc(100vh-6.5rem)] lg:self-start lg:overflow-y-auto lg:border-l lg:border-slate-200 lg:pl-8">
         <div className="min-w-0 space-y-5">
-          {settings}
-          {status}
+          {example && (
+            <div className="flex gap-2 rounded-lg bg-slate-200 p-1">
+              {TABS.map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition ${
+                    tab === t.key
+                      ? 'bg-white text-slate-900 shadow'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {isExample ? (
+            <p className="text-sm text-slate-600">{example}</p>
+          ) : (
+            <>
+              {settings}
+              {status}
+            </>
+          )}
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <div className="fixed inset-x-0 bottom-0 z-10 border-t border-slate-200 bg-white/95 p-4 backdrop-blur lg:static lg:border-0 lg:bg-transparent lg:p-0">
             <button
               onClick={handleExport}
-              disabled={!canExport || exporting}
+              disabled={!(canExport || isExample) || exporting}
               className="mx-auto block w-full max-w-lg rounded-lg bg-[#0b2545] px-4 py-4 text-base font-semibold text-white disabled:opacity-40 lg:max-w-none lg:py-3"
             >
               {exporting ? 'Bezig…' : 'Deel of download PNG'}
@@ -92,7 +125,7 @@ export default function Generator({ settings, renderCanvas, fileName, canExport,
           }}
         >
           <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
-            {renderCanvas(FORMATS[format], (el) => (canvasRefs.current[format] = el))}
+            {renderCanvas(FORMATS[format], (el) => (canvasRefs.current[format] = el), isExample)}
           </div>
         </div>
       </div>
@@ -100,7 +133,7 @@ export default function Generator({ settings, renderCanvas, fileName, canExport,
       {/* Het formaat dat niet in de preview staat, op ware grootte buiten
           beeld: nodig om mee te exporteren. */}
       <div className="pointer-events-none fixed top-0 left-0 -z-10 opacity-0" aria-hidden="true">
-        {renderCanvas(other, (el) => (canvasRefs.current[other.key] = el))}
+        {renderCanvas(other, (el) => (canvasRefs.current[other.key] = el), isExample)}
       </div>
     </div>
   )

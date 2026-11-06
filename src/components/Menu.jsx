@@ -1,5 +1,5 @@
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
-import { PAGES } from '../lib/pages.js'
+import { PAGES, pagePath } from '../lib/pages.js'
 
 /**
  * Vanaf lg een vaste kolom links, in te klappen tot alleen de iconen; de naam
@@ -21,7 +21,7 @@ export default function Menu({ current, open, onClose, collapsed, onCollapse }) 
           {PAGES.map((page) => (
             <li key={page.id}>
               <a
-                href={`#/${page.id}`}
+                href={pagePath(page.id)}
                 onClick={onClose}
                 title={collapsed ? page.label : undefined}
                 className={`flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition ${

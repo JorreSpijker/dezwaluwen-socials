@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 
 /**
- * De menu-items in menuvolgorde. Het id is ook het hash-pad: `#/<id>`.
+ * De menu-items in menuvolgorde. Het id is ook het pad: `/<id>`, home is `/`.
  * Zonder `ready` toont de app nog een placeholder.
  */
 export const PAGES = [
@@ -41,6 +41,7 @@ export const PAGES = [
     label: 'Balsponsor',
     icon: Volleyball,
     description: 'De sponsor van de wedstrijdbal.',
+    ready: true,
   },
   {
     id: 'laatste-nieuws',
@@ -54,11 +55,15 @@ export const PAGES = [
     label: 'Sponsor in de spotlight',
     icon: Sparkles,
     description: 'Eén sponsor uitgelicht.',
+    ready: true,
   },
   {
     id: 'voorstelrondje',
     label: 'Voorstelrondje',
     icon: Hand,
     description: 'Leden stellen zich voor.',
+    ready: true,
   },
 ]
+
+export const pagePath = (id) => (id === 'home' ? '/' : `/${id}`)

@@ -4,6 +4,15 @@ import DateField, { FIELD, PhotoField, TEXTAREA } from '../components/fields.jsx
 import Generator from '../components/Generator.jsx'
 import NewsCanvas from '../components/NewsCanvas.jsx'
 
+// Wat de Voorbeeld-tab toont.
+const EXAMPLE = {
+  photo: '/dummy_nieuws.webp',
+  fit: 'cover',
+  title: 'Trainerscursus van start',
+  text: 'Deze week begon de trainerscursus voor onze jeugdtrainers. Op het veld oefenden ze met warming-ups, spelvormen en het geven van aanwijzingen.',
+  date: formatLongDate(today()),
+}
+
 export default function News() {
   const [photo, setPhoto] = useState(null)
   const [fit, setFit] = useState('cover')
@@ -15,7 +24,7 @@ export default function News() {
     <Generator
       fileName={`zwaluwen-nieuws-${date}`}
       canExport={Boolean(photo && title)}
-      renderCanvas={(format, ref) => (
+      renderCanvas={(format, ref, isExample) => (
         <NewsCanvas
           ref={ref}
           format={format}
@@ -24,8 +33,10 @@ export default function News() {
           title={title}
           text={text}
           date={formatLongDate(date)}
+          {...(isExample && EXAMPLE)}
         />
       )}
+      example="Zo kan een nieuwsbericht eruitzien: foto, kop, tekst en datum."
       settings={
         <>
           <PhotoField label="Foto" onChange={setPhoto} fit={fit} onFit={setFit} />

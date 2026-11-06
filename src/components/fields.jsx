@@ -102,19 +102,22 @@ export function PhotoField({ label, onChange, fit, onFit }) {
           className="mt-1 block w-full text-sm text-slate-700 file:mr-3 file:min-h-11 file:rounded-md file:border file:border-slate-300 file:bg-white file:px-4 file:text-base file:font-medium file:text-slate-700"
         />
       </label>
-      <div className="flex gap-2 rounded-lg bg-slate-200 p-1">
-        {FITS.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => onFit(f.key)}
-            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${
-              fit === f.key ? 'bg-white text-slate-900 shadow' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+      {/* Zonder onFit (bijv. een logo) altijd passend, dus geen keuze. */}
+      {onFit && (
+        <div className="flex gap-2 rounded-lg bg-slate-200 p-1">
+          {FITS.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => onFit(f.key)}
+              className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${
+                fit === f.key ? 'bg-white text-slate-900 shadow' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
